@@ -54,6 +54,20 @@ def unlock(name, key, redis, **kwargs):
     log("ok")
     return 0
 
+def extend(name, validity, key, redis, **kwargs):
+    try:
+        dlm = redlock.Redlock(redis)
+        lock = redlock.Lock(0, name, key)
+        dlm.extend(lock, validity)
+    except Exception as e:
+        log("Error: %s" % e)
+        return 3
+
+    log("ok")
+    return 0
+
+
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -83,7 +97,13 @@ def main():
     parser_unlock.set_defaults(func=unlock)
     parser_unlock.add_argument("name", help="Lock resource name")
     parser_unlock.add_argument("key", help="Result returned by a prior 'lock' command")
-
+    
+    parser_extend = subparsers.add_parser('extend', help='Extend a lock')
+    parser_extend.set_defaults(func=extend)
+    parser_extend.add_argument("name", help="Lock resource name")
+    parser_extend.add_argument("key", help="Result returned by a prior 'lock' command")
+    parser_extend.add_argument("validity", type=int, help="Number of milliseconds the lock's validity will be extended by.")
+    
     args = parser.parse_args()
     log.quiet = args.quiet
 

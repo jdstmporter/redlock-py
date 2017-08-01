@@ -46,6 +46,12 @@ class Redlock(object):
     else
         return 0
     end"""
+    extend_script = """
+    if redis.call("get",KEYS[1]) == ARGV[1] then
+        return redis.call("expire",KEYS[1],ARGV[2])
+    else
+        return 0
+    end"""
 
     def __init__(self, connection_list, retry_count=None, retry_delay=None):
         self.servers = []
@@ -80,6 +86,13 @@ class Redlock(object):
             server.eval(self.unlock_script, 1, resource, val)
         except Exception as e:
             logging.exception("Error unlocking resource %s in server %s", resource, str(server))
+            
+    def extend_instance(self, server, resource, val, ttl):
+        try:
+            server.eval(self.extend_script, 1, resource, val, ttl)
+        except Exception as e:
+            logging.exception("Error extending lock on resource %s in server %s", resource, str(server))
+        
 
     def get_unique_id(self):
         CHARACTERS = string.ascii_letters + string.digits
@@ -126,6 +139,16 @@ class Redlock(object):
         for server in self.servers:
             try:
                 self.unlock_instance(server, lock.resource, lock.key)
+            except RedisError as e:
+                redis_errors.append(e)
+        if redis_errors:
+            raise MultipleRedlockException(redis_errors)
+        
+    def extend(self, lock, ttl):
+        redis_errors = []
+        for server in self.servers:
+            try:
+                self.extend_instance(server, lock.resource, lock.key, ttl)
             except RedisError as e:
                 redis_errors.append(e)
         if redis_errors:
