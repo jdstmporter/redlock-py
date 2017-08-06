@@ -1,4 +1,4 @@
-from __future__ import print_function
+from __future__ import print_function, absolute_import
 
 import argparse
 import sys
@@ -58,15 +58,31 @@ def extend(name, validity, key, redis, **kwargs):
     try:
         dlm = redlock.Redlock(redis)
         lock = redlock.Lock(0, name, key)
-        dlm.extend(lock, validity)
+        if dlm.extend(lock, validity):
+            log("ok")
+            return 0
+        else:
+            log("failed")
+            return 1
     except Exception as e:
         log("Error: %s" % e)
         return 3
 
-    log("ok")
-    return 0
 
-
+def test(name,redis,**kwargs):
+    try:
+        dlm = redlock.Redlock(redis)
+        lock = redlock.Lock(0,name,None)
+        if dlm.test(lock):
+            print("Lock {} taken".format(name))
+        else:
+            print("Lock {} available".format(name))
+        log("ok")
+        return 0
+    except Exception as e:
+        log("Error: %s" % e)
+        return 3
+        
 
 
 def main():
@@ -103,6 +119,10 @@ def main():
     parser_extend.add_argument("name", help="Lock resource name")
     parser_extend.add_argument("key", help="Result returned by a prior 'lock' command")
     parser_extend.add_argument("validity", type=int, help="Number of milliseconds the lock's validity will be extended by.")
+    
+    parser_test = subparsers.add_parser('test', help='Test whether a lock is taken')
+    parser_test.set_defaults(func=test)
+    parser_test.add_argument("name", help="Lock resource name")
     
     args = parser.parse_args()
     log.quiet = args.quiet
