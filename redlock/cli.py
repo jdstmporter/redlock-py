@@ -72,8 +72,7 @@ def extend(name, validity, key, redis, **kwargs):
 def test(name,redis,**kwargs):
     try:
         dlm = redlock.Redlock(redis)
-        lock = redlock.Lock(0,name,None)
-        if dlm.test(lock):
+        if dlm.test(name):
             print("Lock {} taken".format(name))
         else:
             print("Lock {} available".format(name))

@@ -162,8 +162,9 @@ class Redlock(object):
             raise MultipleRedlockException(redis_errors)
         return n>=self.quorum
         
-    def test(self,lock):
+    def test(self,name):
         redis_errors = []
+        lock=Lock(0,name,None)
         n=0
         for server in self.servers:
             try:
