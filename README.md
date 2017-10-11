@@ -2,7 +2,7 @@
 
 redlock-py - extendable Redis distributed locks in Python
 
-This python lib implements the Redis-based distributed lock manager algorithm [described in this blog post](http://redis.io/topics/distlock).
+This python lib implements the Redis-based distributed lock manager algorithm [described in this blog post](http://redis.io/topics/distlock), including the ability to extend locks.
 
 To create a lock manager:
 
